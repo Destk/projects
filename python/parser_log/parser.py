@@ -2,10 +2,21 @@ import subprocess
 import re
 from collections import Counter
 import json
+import argparse
 
-def parse():
+#Функция для парса аргументов командной строки(сервис и since для journalctl)
+def inp():
+    pars_arg = argparse.ArgumentParser(description='Set service and since')
+    pars_arg.add_argument('--service', type=str,default="sshd" ,help="set service from journalctl")
+    pars_arg.add_argument('--since', type=str,default="7 days ago" ,help='set date')
+    args = pars_arg.parse_args()
+    parse(args)
+
+#Основная фкнция программы для парса нашего журнала
+def parse(args):
+#Отлавливаем ошибку если с journalctl проблемы
     try:
-        logs = subprocess.run(["journalctl", "-u", "sshd", "-p", "info"], text=True, capture_output=True)
+        logs = subprocess.run(["journalctl", "-u",args.service , "-p", "info", "--since", args.since], text=True, capture_output=True)
     except FileNotFoundError:
         print("journalctl не установлен")
         return
@@ -14,7 +25,7 @@ def parse():
     ips = Counter()
     entries = []
     count_f = 0
-#парсим текст на брутфорс
+#Парсим текст на брутфорс
     if logs.returncode == 0:
         for s in logs.stdout.splitlines():
             if "Failed password" in s:
@@ -30,9 +41,9 @@ def parse():
     else:
         print("Журнал не найден")
         return
-    #красивый вывод
     output(logins, ips, entries, count_f)
 
+#Функция для красивого вывода
 def output(logins : dict, ips : dict, entries : list, count_f : int):
     log = [f"{i}. {key} - {val} попыток" for i, (key, val) in enumerate(logins.most_common(), 1)]
     ip = [f"{i}. {key} - {val} попыток" for i,(key, val) in enumerate(ips.most_common(),1)]
@@ -40,15 +51,14 @@ def output(logins : dict, ips : dict, entries : list, count_f : int):
     save = input("Сохранить в json? (Y/n): ")
     if save.lower() == 'y' or save == "":
         save_json(entries)
-
+#Функция для сохранения резульата в json формате
 def save_json(entries):
     with open("failed_logins.json", "w") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
     
-
 def main():
     print("Парсер bruteforce in ssh")
-    parse()
+    inp()
 
 if __name__ == "__main__":
     main()
