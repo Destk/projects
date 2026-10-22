@@ -7,8 +7,9 @@ import argparse
 #Функция для парса аргументов командной строки(сервис и since для journalctl)
 def inp():
     pars_arg = argparse.ArgumentParser(description='Set service and since')
-    pars_arg.add_argument('--service', type=str,default="sshd" ,help="set service from journalctl")
-    pars_arg.add_argument('--since', type=str,default="7 days ago" ,help='set date')
+    pars_arg.add_argument('--service', type=str,default="sshd", help="set service from journalctl")
+    pars_arg.add_argument('--since', type=str,default="7 days ago", help='set date')
+    pars_arg.add_argument('-o', '--output', type=str,default=None, help="output to file")
     args = pars_arg.parse_args()
     parse(args)
 
@@ -41,19 +42,18 @@ def parse(args):
     else:
         print("Журнал не найден")
         return
-    output(logins, ips, entries, count_f)
+    output(logins, ips, entries, count_f, args)
 
 #Функция для красивого вывода
-def output(logins : dict, ips : dict, entries : list, count_f : int):
-    log = [f"{i}. {key} - {val} попыток" for i, (key, val) in enumerate(logins.most_common(), 1)]
-    ip = [f"{i}. {key} - {val} попыток" for i,(key, val) in enumerate(ips.most_common(),1)]
+def output(logins : dict, ips : dict, entries : list, count_f : int, args):
+    log = [f"{i}. {key} - {val} попыток" for i, (key, val) in enumerate(logins.most_common(10), 1)]
+    ip = [f"{i}. {key} - {val} попыток" for i,(key, val) in enumerate(ips.most_common(10),1)]
     print(f"=== SSH Failed Logins Report ===\nВсего попыток: {count_f}\n\n--- Top IP ---\n{f"{'\n'.join(ip)}"}\n\n--- Top Logins ---\n{f"{'\n'.join(log)}"}\n\n")
-    save = input("Сохранить в json? (Y/n): ")
-    if save.lower() == 'y' or save == "":
-        save_json(entries)
+    if args.output:
+        save_json(entries,args.output)
 #Функция для сохранения резульата в json формате
-def save_json(entries):
-    with open("failed_logins.json", "w") as f:
+def save_json(entries, filename):
+    with open(filename, "w") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
     
 def main():
