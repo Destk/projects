@@ -43,4 +43,8 @@ Python 3, `subprocess`, `re`, `collections.Counter`, `json`, `argparse`
 - `--since` — период (по умолчанию `7 days ago`)
 - `-o`, `--output` — файл для JSON (если не указан — не сохраняется)
 
+## Две версии
+- `parser.py` — функциональная (baseline)
+- `parser2.py` — ООП-версия (классы, CLI, JSON)
+
 ---
